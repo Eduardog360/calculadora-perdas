@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f5130">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Perdas">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<title>Calculadora de Perdas na Colheita</title>
+<style>
+  :root{
+    --verde:#1f5130; --verde2:#2f7a49; --claro:#eef4ec; --papel:#fbfaf5;
+    --tinta:#1b2a1f; --suave:#5d6b60; --linha:#d6dfd3; --alerta:#b3261e; --ouro:#c58a12;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0; background:var(--papel); color:var(--tinta);
+    font:17px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  header{
+    background:var(--verde); color:#fff;
+    padding:calc(14px + env(safe-area-inset-top)) 18px 16px;
+  }
+  header h1{margin:0; font-size:21px; letter-spacing:.2px}
+  header p{margin:2px 0 0; font-size:14px; opacity:.8}
+  main{max-width:560px; margin:0 auto; padding:14px 14px 40px}
+  section{
+    background:#fff; border:1px solid var(--linha); border-radius:14px;
+    padding:14px; margin-bottom:12px;
+  }
+  h2{margin:0 0 10px; font-size:13px; text-transform:uppercase; letter-spacing:.8px; color:var(--verde2)}
+  label{display:block; font-size:14px; color:var(--suave); margin:0 0 4px}
+  input,select{
+    width:100%; height:52px; font:inherit; font-size:19px; color:var(--tinta);
+    border:1.5px solid var(--linha); border-radius:10px; padding:0 12px; background:#fff;
+    appearance:none; -webkit-appearance:none;
+  }
+  select{
+    background-image:linear-gradient(45deg,transparent 50%,var(--suave) 50%),linear-gradient(135deg,var(--suave) 50%,transparent 50%);
+    background-position:calc(100% - 20px) 22px,calc(100% - 14px) 22px;
+    background-size:6px 6px; background-repeat:no-repeat; padding-right:34px;
+  }
+  input:focus,select:focus{outline:3px solid #9fd0ae; border-color:var(--verde2)}
+  .linha{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .com-botao{display:grid; grid-template-columns:1fr auto; gap:8px; align-items:end}
+  button{
+    font:inherit; font-weight:600; border:0; border-radius:10px; min-height:52px; padding:0 16px;
+    background:var(--claro); color:var(--verde); cursor:pointer;
+  }
+  button:active{transform:translateY(1px)}
+  .primario{background:var(--verde); color:#fff}
+  .perigo{background:#fbe9e7; color:var(--alerta)}
+  .fino{min-height:40px; font-size:15px; padding:0 12px}
+  .amostra{border:1px dashed var(--linha); border-radius:12px; padding:10px; margin-bottom:10px; background:#fcfdfb}
+  .amostra-topo{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:14px; color:var(--suave); font-weight:600}
+  .dica{font-size:13px; color:var(--suave); margin:6px 0 0}
+  .ficha{border-color:var(--verde); background:var(--verde); color:#fff}
+  .ficha h2{color:#b9e2c4}
+  .grande{font-size:15px; opacity:.85}
+  .destaque{font-size:44px; font-weight:800; line-height:1.05; margin:2px 0 0; font-variant-numeric:tabular-nums}
+  .destaque small{font-size:19px; font-weight:600; opacity:.85}
+  .grade{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px}
+  .item{background:rgba(255,255,255,.12); border-radius:10px; padding:10px}
+  .item.largo{grid-column:1/-1}
+  .item span{display:block; font-size:13px; opacity:.85}
+  .item b{display:block; font-size:24px; font-variant-numeric:tabular-nums}
+  .item i{font-style:normal; font-size:14px; opacity:.9}
+  .aviso{margin-top:10px; font-size:14px; background:#fff3cd; color:#5c4400; border-radius:8px; padding:8px 10px}
+  .vazio{opacity:.8; font-size:15px}
+  .acoes{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:12px}
+  .acoes button{background:rgba(255,255,255,.16); color:#fff}
+  dialog{border:0; border-radius:16px; padding:18px; width:min(92vw,420px); color:var(--tinta)}
+  dialog::backdrop{background:rgba(0,0,0,.45)}
+  dialog h3{margin:0 0 12px}
+  dialog .campo{margin-bottom:12px}
+  dialog .botoes{display:flex; gap:8px; margin-top:6px}
+  dialog .botoes button{flex:1}
+  dialog.res{background:var(--verde); color:#fff; width:min(94vw,520px); max-height:90vh; overflow:auto}
+  dialog.res h3{color:#b9e2c4; font-size:15px; text-transform:uppercase; letter-spacing:.8px}
+  dialog.res .acoes .primario{background:#fff; color:var(--verde)}
+  #offline{font-size:12px; opacity:.75; margin-top:4px}
+  footer{max-width:560px; margin:0 auto; padding:0 18px 30px; font-size:12.5px; color:var(--suave)}
+  .baixar{display:flex; align-items:center; gap:8px; margin-top:12px}
+  .baixar span{font-size:14px; opacity:.9; margin-right:2px}
+  .baixar button{
+    flex:1; min-height:46px; padding:0 10px; font-size:16px;
+    background:#fff; color:var(--verde); box-shadow:0 1px 4px rgba(0,0,0,.25);
+  }
+  .ajuda{background:#fff8e1; border-color:#e8d48a}
+  .ajuda h2{color:#7a5a00}
+  .ajuda[hidden]{display:none}
+  .ajuda-intro{margin:0 0 8px; font-size:16px}
+  .ajuda ol{margin:0 0 8px; padding-left:0; list-style:none; counter-reset:p}
+  .ajuda li{counter-increment:p; position:relative; padding:8px 0 8px 42px; font-size:17px; min-height:40px}
+  .ajuda li::before{
+    content:counter(p); position:absolute; left:0; top:6px; width:30px; height:30px; border-radius:50%;
+    background:var(--verde); color:#fff; font-weight:700; display:flex; align-items:center; justify-content:center;
+  }
+  .ajuda .tecla{display:inline-block; padding:0 7px; border:1.5px solid #c9b25a; border-radius:7px; background:#fff; font-weight:700; line-height:1.5}
+  footer a{color:var(--verde2); font-weight:600}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌾 Perdas na Colheita</h1>
+  <p>Calcule quanto grão fica no campo</p>
+  <div class="baixar" id="baixar">
+    <span>Baixar o app:</span>
+    <button id="instalar" type="button">🤖 Android</button>
+    <button id="instalarIos" type="button">🍎 iPhone</button>
+  </div>
+  <div id="offline"></div>
+</header>
+
+<main>
+
+
+  <section>
+    <h2>1 · Variedade plantada</h2>
+    <div class="com-botao">
+      <div>
+        <label for="variedade">Variedade</label>
+        <select id="variedade"></select>
+      </div>
+      <button id="btnNova" type="button">+ Nova</button>
+    </div>
+    <p class="dica" id="infoVar"></p>
+  </section>
+
+  <section>
+    <h2>2 · Grãos coletados no chão</h2>
+    <div id="amostras"></div>
+    <button id="btnAddAmostra" class="fino" type="button">+ Adicionar outra amostra</button>
+    <p class="dica">Marque uma área (ex.: quadro de 1 m × 1 m = 1 m²) atrás da colheitadeira, recolha todos os grãos caídos e pese. Com várias amostras, o app usa a média.</p>
+  </section>
+
+  <section>
+    <h2>3 · Áreas</h2>
+    <div class="linha">
+      <div>
+        <label for="areaTotal">Área total (ha)</label>
+        <input id="areaTotal" inputmode="decimal" autocomplete="off" placeholder="0">
+      </div>
+      <div>
+        <label for="areaFalta">Falta colher (ha)</label>
+        <input id="areaFalta" inputmode="decimal" autocomplete="off" placeholder="0">
+      </div>
+    </div>
+  </section>
+
+  <button id="btnCalcular" class="primario" type="button" style="width:100%; margin-bottom:12px; font-size:21px; min-height:60px">🧮 CALCULAR</button>
+
+  <section class="ficha" id="secResultado" aria-live="polite">
+    <h2>Resultado</h2>
+    <div id="resultado"></div>
+    <div class="acoes">
+      <button id="btnCompartilhar" type="button">📤 Compartilhar imagem</button>
+      <button id="btnLimpar" type="button">🧹 Limpar amostras</button>
+    </div>
+  </section>
+</main>
+
+<footer>
+  Cálculo: perda (kg/ha) = g/m² × 10. Porcentagem = perda por hectare ÷ produtividade esperada da variedade.
+  Os dados ficam só no seu aparelho.
+</footer>
+
+<dialog id="ajuda" class="ajuda">
+  <h3>📲 Instalar no celular</h3>
+  <p class="ajuda-intro" id="ajudaIntro"></p>
+  <ol id="ajudaPassos"></ol>
+  <p class="dica">Abra o app <b>uma vez com internet</b>. Depois de instalado, ele funciona <b>sem sinal</b>.</p>
+  <button id="ajudaShare" type="button" style="width:100%; margin-bottom:8px; display:none">⬆️ Abrir o menu Compartilhar</button>
+  <button id="ajudaFechar" type="button" class="primario" style="width:100%">Entendi</button>
+</dialog>
+
+<dialog id="dlgRes" class="res">
+  <h3>🌾 Resultado</h3>
+  <div id="resDlg"></div>
+  <div class="acoes">
+    <button id="resShare" type="button">📤 Compartilhar imagem</button>
+    <button id="resFechar" type="button" class="primario">Fechar</button>
+  </div>
+</dialog>
+
+<dialog id="dlgVar">
+  <form method="dialog" id="formVar">
+    <h3 id="dlgTitulo">Nova variedade</h3>
+    <div class="campo">
+      <label for="vNome">Nome da variedade</label>
+      <input id="vNome" placeholder="Ex.: TMG 7062" autocomplete="off" required>
+    </div>
+    <div class="campo">
+      <label for="vCultura">Cultura</label>
+      <select id="vCultura"></select>
+    </div>
+    <div class="campo">
+      <label for="vProd">Produtividade esperada (<span id="vUn">sc/ha</span>)</label>
+      <input id="vProd" inputmode="decimal" autocomplete="off" required>
+    </div>
+    <div class="botoes">
+      <button type="button" id="vCancelar">Cancelar</button>
+      <button type="submit" class="primario">Salvar</button>
+    </div>
+    <div class="botoes" id="vExcluirBox" style="display:none">
+      <button type="button" id="vExcluir" class="perigo">Excluir variedade</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+(() => {
+  'use strict';
+
+  // sc = kg por saca; y = produtividade sugerida (sc/ha)
+  const CULTURAS = {
+    soja:  { nome: 'Soja',   sc: 60, y: 60  },
+    milho: { nome: 'Milho',  sc: 60, y: 150 },
+    trigo: { nome: 'Trigo',  sc: 60, y: 60  },
+    feijao:{ nome: 'Feijão', sc: 60, y: 45  },
+    arroz: { nome: 'Arroz',  sc: 50, y: 140 },
+    sorgo: { nome: 'Sorgo',  sc: 60, y: 80  },
+    outra: { nome: 'Outra',  sc: 60, y: 60  },
+  };
+  const KEY = 'perdas.v1';
+  const $ = id => document.getElementById(id);
+
+  let S = {
+    variedades: [],
+    sel: null,
+    amostras: [{ a: '', p: '' }],
+    total: '',
+    falta: '',
+  };
+  try { Object.assign(S, JSON.parse(localStorage.getItem(KEY) || '{}')); } catch (e) {}
+  if (!Array.isArray(S.amostras) || !S.amostras.length) S.amostras = [{ a: '', p: '' }];
+
+  const salvar = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+
+  const num = v => {
+    const n = parseFloat(String(v ?? '').trim().replace(/\./g, m => m).replace(',', '.'));
+    return Number.isFinite(n) ? n : NaN;
+  };
+  const f = (n, d = 1) => n.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: d });
+  const vAtual = () => S.variedades.find(v => v.id === S.sel) || null;
+
+  /* ---------- Variedades ---------- */
+  function desenhaVariedades() {
+    const sel = $('variedade');
+    sel.innerHTML = '';
+    if (!S.variedades.length) {
+      sel.innerHTML = '<option value="">Cadastre uma variedade →</option>';
+    } else {
+      S.variedades.forEach(v => {
+        const o = document.createElement('option');
+        o.value = v.id;
+        o.textContent = `${v.nome} (${CULTURAS[v.cultura].nome})`;
+        sel.appendChild(o);
+      });
+      if (!vAtual()) S.sel = S.variedades[0].id;
+      sel.value = S.sel;
+    }
+    const v = vAtual();
+    $('infoVar').innerHTML = v
+      ? `Produtividade esperada: <b>${f(v.prod)} sc/ha</b> (${f(v.prod * CULTURAS[v.cultura].sc, 0)} kg/ha) · <a href="#" id="editarVar">editar</a>`
+      : 'Toque em “+ Nova” para cadastrar a variedade e a produtividade esperada.';
+    const ed = $('editarVar');
+    if (ed) ed.onclick = e => { e.preventDefault(); abreDialogo(v); };
+  }
+
+  const dlg = $('dlgVar');
+  let editando = null;
+
+  function abreDialogo(v) {
+    editando = v || null;
+    $('dlgTitulo').textContent = v ? 'Editar variedade' : 'Nova variedade';
+    $('vNome').value = v ? v.nome : '';
+    $('vCultura').value = v ? v.cultura : 'soja';
+    $('vProd').value = v ? String(v.prod).replace('.', ',') : String(CULTURAS.soja.y);
+    $('vExcluirBox').style.display = v ? 'flex' : 'none';
+    atualizaUnidade();
+    dlg.showModal();
+  }
+  function atualizaUnidade() {
+    const c = CULTURAS[$('vCultura').value];
+    $('vUn').textContent = `sc/ha · saca de ${c.sc} kg`;
+  }
+
+  Object.entries(CULTURAS).forEach(([k, c]) => {
+    const o = document.createElement('option');
+    o.value = k; o.textContent = c.nome;
+    $('vCultura').appendChild(o);
+  });
+  $('vCultura').addEventListener('change', () => {
+    atualizaUnidade();
+    if (!editando) $('vProd').value = String(CULTURAS[$('vCultura').value].y);
+  });
+  $('btnNova').onclick = () => abreDialogo(null);
+  $('vCancelar').onclick = () => dlg.close();
+  $('formVar').addEventListener('submit', e => {
+    const nome = $('vNome').value.trim();
+    const prod = num($('vProd').value);
+    if (!nome || !(prod > 0)) { e.preventDefault(); return; }
+    const cultura = $('vCultura').value;
+    if (editando) {
+      Object.assign(editando, { nome, cultura, prod });
+      S.sel = editando.id;
+    } else {
+      const v = { id: 'v' + Date.now().toString(36), nome, cultura, prod };
+      S.variedades.push(v);
+      S.sel = v.id;
+    }
+    salvar(); desenhaVariedades(); calcula();
+  });
+  $('vExcluir').onclick = () => {
+    if (!editando || !confirm(`Excluir "${editando.nome}"?`)) return;
+    S.variedades = S.variedades.filter(v => v.id !== editando.id);
+    S.sel = S.variedades[0]?.id ?? null;
+    dlg.close(); salvar(); desenhaVariedades(); calcula();
+  };
+  $('variedade').onchange = e => { S.sel = e.target.value; salvar(); desenhaVariedades(); calcula(); };
+
+  /* ---------- Amostras ---------- */
+  function desenhaAmostras() {
+    const box = $('amostras');
+    box.innerHTML = '';
+    S.amostras.forEach((am, i) => {
+      const d = document.createElement('div');
+      d.className = 'amostra';
+      d.innerHTML = `
+        <div class="amostra-topo"><span>Amostra ${i + 1}</span>
+          ${S.amostras.length > 1 ? '<button type="button" class="fino perigo" data-rm>Remover</button>' : ''}
+        </div>
+        <div class="linha">
+          <div><label>Área coletada (m²)</label>
+            <input inputmode="decimal" autocomplete="off" placeholder="1" data-k="a"></div>
+          <div><label>Peso dos grãos (g)</label>
+            <input inputmode="decimal" autocomplete="off" placeholder="0" data-k="p"></div>
+        </div>`;
+      d.querySelectorAll('input').forEach(inp => {
+        inp.value = am[inp.dataset.k] ?? '';
+        inp.addEventListener('input', () => { am[inp.dataset.k] = inp.value; salvar(); calcula(); });
+      });
+      const rm = d.querySelector('[data-rm]');
+      if (rm) rm.onclick = () => { S.amostras.splice(i, 1); salvar(); desenhaAmostras(); calcula(); };
+      box.appendChild(d);
+    });
+  }
+  $('btnAddAmostra').onclick = () => {
+    const ult = S.amostras[S.amostras.length - 1];
+    S.amostras.push({ a: ult ? ult.a : '', p: '' });
+    salvar(); desenhaAmostras(); calcula();
+    const ins = $('amostras').querySelectorAll('input');
+    ins[ins.length - 1].focus();
+  };
+  $('btnLimpar').onclick = () => {
+    S.amostras = [{ a: S.amostras[0]?.a || '', p: '' }];
+    salvar(); desenhaAmostras(); calcula();
+  };
+
+  ['areaTotal', 'areaFalta'].forEach(id => {
+    $(id).addEventListener('input', () => {
+      S[id === 'areaTotal' ? 'total' : 'falta'] = $(id).value;
+      salvar(); calcula();
+    });
+  });
+
+  /* ---------- Cálculo ---------- */
+  let ultimo = null;
+  let mostrar = false;   // o resultado só aparece depois de tocar em CALCULAR
+
+  $('btnCalcular').onclick = () => {
+    mostrar = true;
+    if (document.activeElement) document.activeElement.blur();
+    calcula();
+    // mostra o resultado em uma janela grande, bem à vista
+    $('resDlg').innerHTML = $('resultado').innerHTML;
+    $('resShare').style.display = ultimo ? '' : 'none';
+    $('dlgRes').showModal();
+  };
+
+  function calcula() {
+    const R = $('resultado');
+    const v = vAtual();
+
+    if (!mostrar) {
+      ultimo = null;
+      R.innerHTML = '<p class="vazio">Preencha os dados acima e toque em CALCULAR.</p>';
+      return;
+    }
+
+    let somaA = 0, somaP = 0, n = 0;
+    S.amostras.forEach(am => {
+      const a = num(am.a), p = num(am.p);
+      if (a > 0 && p >= 0) { somaA += a; somaP += p; n++; }
+    });
+
+    if (!n) {
+      ultimo = null;
+      R.innerHTML = '<p class="vazio">Informe a área coletada (m²) e o peso dos grãos (g) para ver a perda.</p>';
+      return;
+    }
+
+    const gm2 = somaP / somaA;       // g/m²
+    const kgHa = gm2 * 10;           // 1 g/m² = 10 kg/ha
+    const scAtual = v ? CULTURAS[v.cultura].sc : 60;
+    const scHa = kgHa / scAtual;
+
+    const total = num(S.total), falta = num(S.falta);
+    let prodKg = null, pct = null;
+    if (v) { prodKg = v.prod * scAtual; pct = kgHa / prodKg * 100; }
+
+    let html = `
+      <div class="grande">Perda por hectare${n > 1 ? ` (média de ${n} amostras)` : ''}</div>
+      <div class="destaque">${f(kgHa)} <small>kg/ha</small></div>
+      <div class="grande">${f(scHa, 2)} sc/ha · ${f(gm2, 1)} g/m²</div>
+      <div class="grade">`;
+
+    html += `<div class="item"><span>Perda sobre a produtividade</span>
+      <b>${pct != null ? f(pct, 2) + ' %' : '—'}</b>
+      <i>${pct != null ? 'de ' + f(v.prod) + ' sc/ha' : 'cadastre a variedade'}</i></div>`;
+
+    let kgFalta = null, pctTotal = null;
+    if (falta > 0) {
+      kgFalta = kgHa * falta;
+      html += `<div class="item"><span>Perda na área que falta</span>
+        <b>${f(kgFalta, 0)} kg</b><i>${f(kgFalta / scAtual, 1)} sacas · ${f(falta)} ha</i></div>`;
+      if (total > 0 && prodKg) {
+        pctTotal = kgFalta / (total * prodKg) * 100;
+        html += `<div class="item largo"><span>Perda na área que falta, em relação à produção da área total</span>
+          <b>${f(pctTotal, 2)} %</b><i>${f(kgFalta, 0)} kg de ${f(total * prodKg, 0)} kg esperados (${f(total)} ha)</i></div>`;
+      }
+    }
+    if (total > 0) {
+      const kgTot = kgHa * total;
+      html += `<div class="item largo"><span>Se a perda for igual em toda a área (${f(total)} ha)</span>
+        <b>${f(kgTot, 0)} kg</b><i>${f(kgTot / scAtual, 1)} sacas</i></div>`;
+    }
+    html += '</div>';
+
+    if (total > 0 && falta > total)
+      html += '<div class="aviso">⚠ A área que falta colher é maior que a área total.</div>';
+    if (v && v.cultura === 'soja')
+      html += '<div class="aviso">Referência para soja: cerca de 1 saca/ha (60 kg/ha) costuma ser considerada perda aceitável.</div>';
+    if (!(falta > 0))
+      html += '<p class="dica" style="color:#cfe8d5">Informe “Falta colher (ha)” para ver a perda em kg nessa área.</p>';
+
+    R.innerHTML = html;
+
+    ultimo = { v, n, gm2, kgHa, scHa, pct, total, falta, kgFalta, pctTotal, scAtual };
+  }
+
+  /* ---------- Compartilhar ---------- */
+  const compartilhar = async () => {
+    if (!ultimo) return;
+    const u = ultimo;
+    const L = ['🌾 Perda na colheita'];
+    if (u.v) L.push(`Variedade: ${u.v.nome} (${CULTURAS[u.v.cultura].nome})`);
+    L.push(`Perda: ${f(u.kgHa)} kg/ha (${f(u.scHa, 2)} sc/ha)`);
+    if (u.pct != null) L.push(`Perda sobre a produtividade: ${f(u.pct, 2)} %`);
+    if (u.kgFalta != null) L.push(`Área que falta: ${f(u.falta)} ha → perda de ${f(u.kgFalta, 0)} kg (${f(u.kgFalta / u.scAtual, 1)} sacas)`);
+    if (u.pctTotal != null) L.push(`Em relação à produção da área total: ${f(u.pctTotal, 2)} %`);
+    const texto = L.join('\n');
+    const btn = $('btnCompartilhar');
+    btn.disabled = true;
+    try {
+      const blob = await gerarImagem(u);
+      const arq = new File([blob], 'perda-colheita.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [arq] })) {
+        await navigator.share({ files: [arq], text: texto });
+      } else {
+        // sem compartilhamento de arquivos (ex.: computador): baixa a imagem
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'perda-colheita.png';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }
+    } catch (e) { /* compartilhamento cancelado */ }
+    btn.disabled = false;
+  };
+  $('btnCompartilhar').onclick = compartilhar;
+  $('resShare').onclick = compartilhar;
+  $('resFechar').onclick = () => $('dlgRes').close();
+
+  function gerarImagem(u) {
+    const W = 1080, P = 60, G = 30, CH = 200;
+    const F = 'system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+
+    const normais = [], largos = [];
+    normais.push({ l: 'Perda sobre a produtividade', v: u.pct != null ? f(u.pct, 2) + ' %' : '—', s: u.v ? 'de ' + f(u.v.prod) + ' sc/ha esperadas' : '' });
+    if (u.kgFalta != null) normais.push({ l: 'Perda na área que falta', v: f(u.kgFalta, 0) + ' kg', s: `${f(u.kgFalta / u.scAtual, 1)} sacas · ${f(u.falta)} ha` });
+    if (u.pctTotal != null) largos.push({ l: 'Perda da área que falta ÷ produção da área total', v: f(u.pctTotal, 2) + ' %', s: `de ${f(u.total)} ha de área total` });
+    if (u.total > 0) largos.push({ l: `Se a perda for igual nos ${f(u.total)} ha`, v: f(u.kgHa * u.total, 0) + ' kg', s: `${f(u.kgHa * u.total / u.scAtual, 1)} sacas` });
+
+    // posiciona os cartões
+    const caixas = [];
+    let y = 640;
+    const meia = (W - 2 * P - G) / 2;
+    for (let i = 0; i < normais.length; i += 2) {
+      const par = normais.slice(i, i + 2);
+      par.forEach((c, j) => caixas.push({ ...c, x: P + j * (meia + G), y, w: par.length === 1 ? W - 2 * P : meia }));
+      y += CH + G;
+    }
+    largos.forEach(c => { caixas.push({ ...c, x: P, y, w: W - 2 * P }); y += CH + G; });
+    const H = y + 130;
+
+    const cv = document.createElement('canvas');
+    cv.width = W; cv.height = H;
+    const c = cv.getContext('2d');
+
+    const rr = (x, y, w, h, r) => { c.beginPath(); c.roundRect(x, y, w, h, r); };
+    const ajusta = (txt, max, px, peso) => {   // reduz a fonte até caber
+      let s = px;
+      do { c.font = `${peso} ${s}px ${F}`; s -= 2; } while (c.measureText(txt).width > max && s > 18);
+    };
+
+    c.fillStyle = '#fbfaf5'; c.fillRect(0, 0, W, H);
+
+    // topo
+    c.fillStyle = '#1f5130'; c.fillRect(0, 0, W, 250);
+    c.fillStyle = '#fff'; c.textBaseline = 'alphabetic';
+    c.font = `800 62px ${F}`; c.fillText('🌾 Perda na colheita', P, 110);
+    c.font = `400 34px ${F}`; c.fillStyle = '#c9e5d1';
+    c.fillText(new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' }), P, 165);
+    if (u.v) {
+      c.fillStyle = '#fff'; ajusta(`${u.v.nome} · ${CULTURAS[u.v.cultura].nome}`, W - 2 * P, 38, 600);
+      c.fillText(`${u.v.nome} · ${CULTURAS[u.v.cultura].nome}`, P, 220);
+    }
+
+    // destaque
+    c.fillStyle = '#1f5130'; rr(P, 290, W - 2 * P, 310, 28); c.fill();
+    c.fillStyle = '#b9e2c4'; c.font = `500 34px ${F}`;
+    c.fillText('Perda por hectare' + (u.n > 1 ? ` (média de ${u.n} amostras)` : ''), P + 40, 350);
+    c.fillStyle = '#fff';
+    const big = f(u.kgHa);
+    c.font = `800 150px ${F}`; c.fillText(big, P + 40, 500);
+    const bw = c.measureText(big).width;
+    c.font = `600 52px ${F}`; c.fillText('kg/ha', P + 40 + bw + 20, 500);
+    c.font = `400 36px ${F}`; c.fillStyle = '#c9e5d1';
+    c.fillText(`${f(u.scHa, 2)} sc/ha  ·  ${f(u.gm2, 1)} g/m²`, P + 40, 565);
+
+    // cartões
+    caixas.forEach(b => {
+      c.fillStyle = '#eef4ec'; rr(b.x, b.y, b.w, CH, 24); c.fill();
+      c.strokeStyle = '#d6dfd3'; c.lineWidth = 2; rr(b.x, b.y, b.w, CH, 24); c.stroke();
+      c.fillStyle = '#5d6b60'; ajusta(b.l, b.w - 50, 28, 500); c.fillText(b.l, b.x + 25, b.y + 52);
+      c.fillStyle = '#1f5130'; ajusta(b.v, b.w - 50, 72, 800); c.fillText(b.v, b.x + 25, b.y + 130);
+      c.fillStyle = '#5d6b60'; ajusta(b.s, b.w - 50, 28, 400); c.fillText(b.s, b.x + 25, b.y + 176);
+    });
+
+    // rodapé
+    c.fillStyle = '#5d6b60'; c.font = `400 26px ${F}`;
+    c.fillText('Calculadora de Perdas na Colheita', P, H - 60);
+    c.fillText('kg/ha = g/m² × 10 · % = perda ÷ produtividade esperada', P, H - 25);
+
+    return new Promise((ok, erro) => cv.toBlob(b => b ? ok(b) : erro(new Error('falha')), 'image/png'));
+  }
+
+  /* ---------- Instalação e offline ---------- */
+  let promptInstalar = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault(); promptInstalar = e;
+  });
+  $('instalar').onclick = async () => {
+    if (promptInstalar) {            // Android/Chrome: abre a instalação direto
+      promptInstalar.prompt();
+      await promptInstalar.userChoice;
+      promptInstalar = null;
+    } else {                         // sem instalação direta: mostra o passo a passo
+      mostraAjuda('android');
+    }
+  };
+  $('instalarIos').onclick = () => mostraAjuda('ios');
+  window.addEventListener('appinstalled', () => { $('instalar').style.display = 'none'; });
+
+  /* ---------- Ajuda de instalação (passo a passo por aparelho) ---------- */
+  const ua = navigator.userAgent;
+  const jaInstalado = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const iosSafari = ios && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA/.test(ua);
+  const android = /Android/.test(ua);
+  const embutido = /FBAN|FBAV|Instagram|Line\/|MicroMessenger/.test(ua);   // navegador dentro de outro app
+
+  function montaAjuda(modo) {
+    let intro = '', passos = [];
+    $('ajudaShare').style.display = 'none';
+    if (embutido) {
+      intro = 'Você abriu este link dentro de outro aplicativo (Instagram, Facebook...). A instalação só funciona no navegador.';
+      passos = [
+        'Toque nos <span class="tecla">⋯</span> ou <span class="tecla">⋮</span> no canto da tela.',
+        'Toque em <span class="tecla">Abrir no navegador</span> (Chrome no Android, Safari no iPhone).',
+        'Toque de novo em <b>Baixar o app</b>.',
+      ];
+    } else if (modo === 'ios' && ios && !iosSafari) {
+      intro = 'No iPhone, a instalação só funciona pelo <b>Safari</b>.';
+      passos = [
+        'Copie o endereço desta página.',
+        'Abra o <b>Safari</b> (ícone azul de bússola) e cole o endereço.',
+        'Siga os passos que vão aparecer aqui.',
+      ];
+    } else if (modo === 'ios') {
+      intro = 'Faça assim no iPhone (no <b>Safari</b>):';
+      passos = [
+        'Toque no botão <span class="tecla">Compartilhar ⬆️</span> (quadrado com seta, na barra de baixo; se não aparecer, toque em <span class="tecla">⋯</span>).',
+        'Role a lista e toque em <span class="tecla">Adicionar à Tela de Início ➕</span>.',
+        'Toque em <span class="tecla">Adicionar</span>. O ícone 🌾 aparece na sua tela.',
+      ];
+      if (iosSafari && navigator.share) $('ajudaShare').style.display = '';
+    } else {
+      intro = 'Faça assim no Android (no <b>Chrome</b>):';
+      passos = [
+        'Toque nos <span class="tecla">⋮</span> três pontinhos, no canto de cima do Chrome.',
+        'Toque em <span class="tecla">Instalar app</span> (ou <span class="tecla">Adicionar à tela inicial</span>).',
+        'Toque em <span class="tecla">Instalar</span>. O ícone 🌾 aparece na sua tela.',
+      ];
+    }
+    $('ajudaIntro').innerHTML = intro;
+    $('ajudaPassos').innerHTML = passos.map(p => `<li>${p}</li>`).join('');
+  }
+  // só aparece quando a pessoa toca em "Baixar o app" num aparelho sem instalação direta
+  function mostraAjuda(modo) {
+    if (jaInstalado) return;
+    montaAjuda(modo);
+    if (!$('ajuda').open) $('ajuda').showModal();
+  }
+  $('ajudaFechar').onclick = () => $('ajuda').close();
+  $('ajudaShare').onclick = () => {
+    navigator.share({ title: 'Calculadora de Perdas na Colheita', url: location.href }).catch(() => {});
+  };
+  if (jaInstalado) $('baixar').style.display = 'none';
+
+  const msgOff = () => {
+    $('offline').textContent = navigator.onLine ? '' : 'Sem internet — funcionando offline ✔';
+  };
+  window.addEventListener('online', msgOff);
+  window.addEventListener('offline', msgOff);
+  msgOff();
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+
+  /* ---------- Início ---------- */
+  $('areaTotal').value = S.total;
+  $('areaFalta').value = S.falta;
+  desenhaVariedades();
+  desenhaAmostras();
+  calcula();
+})();
+</script>
+</body>
+</html>
